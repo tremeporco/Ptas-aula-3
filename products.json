@@ -1,8 +1,7 @@
 [
-{ 
-	"id":1, 
-	"nome":"Mouse Gamer", 
-	"preco":149.90
-}
-
+  {
+    "id": 1,
+    "nome": "Mouse Gamer",
+    "preco": "2,22"
+  }
 ]
