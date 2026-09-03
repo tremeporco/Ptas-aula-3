@@ -1,7 +1,8 @@
 [
   {
     "id": 1,
-    "nome": "Mouse Gamer",
-    "preco": "2,22"
+    "nome": "Teclado Gamer",
+    "preco": 430,
+    "updatedAt": "2026-09-03T02:03:27.010Z"
   }
 ]
