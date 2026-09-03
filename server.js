@@ -7,7 +7,7 @@ const PORT = 3000;
 
 app.use(express.json());
 
-    const readProducts = (id) => {
+    const readProducts = () => {
         const data1 = fs.readFileSync('./products.json', 'utf-8');
         return JSON.parse(data1);
     };
@@ -28,17 +28,30 @@ app.put('/products/:id', async (req, res) => {
     })
   }
 
-  // 3. Busca o índice (não o objeto) para poder substituir no array
   const products = await readProducts()
   const idx = products.findIndex(u => u.id === id)
   if (idx === -1) return res.status(404).json({ erro: 'produtos não encontrado' })
 
-  // 4. SUBSTITUI o objeto inteiro — mantém id da URL, descarta o do body
   products[idx] = { id, nome, preco }
   
-  // 5. Persiste e responde com recurso atualizado
    writeData('products.json', products)
-  res.json(products[idx])  // 200 OK
+  res.json(products[idx])  
+})
+
+app.patch('/products/:id', async (req, res) => {
+  const id = Number(req.params.id)
+  const products = await readProducts()
+  const product = products.find(p => p.id === id)
+  if (!product) return res.status(404).json({ erro: 'Produto não encontrado' })
+
+  const { id: _, createdAt: __, updatedAt: ___, ...dadosPermitidos } = req.body || {}
+  Object.assign(product, dadosPermitidos)
+  
+
+  product.updatedAt = new Date().toISOString()
+  
+  writeData('products.json', products)
+  res.json(product)  
 })
 
 app.listen(PORT, () => console.log(`Servidor rodando em http://localhost:${PORT}`));
