@@ -42,23 +42,30 @@ app.get('/products/:id', (req, res) => {
   res.json(product);
 });
 
+
 app.delete('/products/:id', (req, res) => {
   const id = Number(req.params.id);
+  const forceDelete = req.query.force === 'true';
   const products = readProducts(); 
-  
-  const idx = products.findIndex(p => p.id === id && !p.deletedAt);
+
+ 
+  const idx = products.findIndex(p => p.id === id && (forceDelete || !p.deletedAt));
   
   if (idx === -1) {
-    return res.status(404).json({ erro: 'Produto não encontrado ou já excluído' });
+    return res.status(404).json({ erro: 'Produto não encontrado' });
   }
   
-
-  products[idx].deletedAt = new Date().toISOString();
+  if (forceDelete) {
+    
+    products.splice(idx, 1);
+  } else {
+    products[idx].deletedAt = new Date().toISOString();
+  }
   
   writeProducts(products);
-  
   res.status(204).end();
 });
+
 
 
 
