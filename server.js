@@ -11,7 +11,6 @@ const readProducts = () => {
     const data = fs.readFileSync('./products.json', 'utf-8');
     return JSON.parse(data);
   } catch (error) {
-
     return [];
   }
 };
@@ -20,21 +19,48 @@ const writeProducts = (data) => {
   fs.writeFileSync('./products.json', JSON.stringify(data, null, 2), 'utf-8');
 };
 
+
+
+app.get('/products', (req, res) => {
+  const products = readProducts();
+  
+  const activeProducts = products.filter(p => !p.deletedAt);
+  
+  res.json(activeProducts);
+});
+
+app.get('/products/:id', (req, res) => {
+  const id = Number(req.params.id);
+  const products = readProducts();
+  
+  const product = products.find(p => p.id === id && !p.deletedAt);
+  
+  if (!product) {
+    return res.status(404).json({ erro: 'Produto não encontrado ou excluído' });
+  }
+  
+  res.json(product);
+});
+
 app.delete('/products/:id', (req, res) => {
   const id = Number(req.params.id);
   const products = readProducts(); 
   
-  const idx = products.findIndex(p => p.id === id);
+  const idx = products.findIndex(p => p.id === id && !p.deletedAt);
   
   if (idx === -1) {
-    return res.status(404).json({ erro: 'Produto não encontrado' });
+    return res.status(404).json({ erro: 'Produto não encontrado ou já excluído' });
   }
   
-  products.splice(idx, 1); 
+
+  products[idx].deletedAt = new Date().toISOString();
+  
   writeProducts(products);
   
   res.status(204).end();
 });
+
+
 
 app.put('/products/:id', (req, res) => {
   const id = Number(req.params.id);
@@ -45,10 +71,10 @@ app.put('/products/:id', (req, res) => {
   }
   
   const products = readProducts();
-  const idx = products.findIndex(p => p.id === id);
+  const idx = products.findIndex(p => p.id === id && !p.deletedAt); 
   
   if (idx === -1) {
-    return res.status(404).json({ erro: 'Produto não encontrado' });
+    return res.status(404).json({ erro: 'Produto não encontrado ou excluído' });
   }
 
   const oldProduct = products[idx];
@@ -65,14 +91,13 @@ app.put('/products/:id', (req, res) => {
   res.json(products[idx]);
 });
 
-
 app.patch('/products/:id', (req, res) => {
   const id = Number(req.params.id);
   const products = readProducts();
   
-  const idx = products.findIndex(p => p.id === id);
+  const idx = products.findIndex(p => p.id === id && !p.deletedAt); 
   if (idx === -1) {
-    return res.status(404).json({ erro: 'Produto não encontrado' });
+    return res.status(404).json({ erro: 'Produto não encontrado ou excluído' });
   }
   
   const product = products[idx];
