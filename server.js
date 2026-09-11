@@ -1,5 +1,6 @@
 import express from 'express';
 import fs from 'fs';
+import { findAll, findById, create, update, remove } from './services/users.js';
 
 const app = express();
 const PORT = 3000;
@@ -19,21 +20,26 @@ const writeProducts = (data) => {
   fs.writeFileSync('./products.json', JSON.stringify(data, null, 2), 'utf-8');
 };
 
-
+const validateUserPayload = (req, res, next) => {
+  const { nome, preco } = req.body || {};
+  
+  if (typeof nome !== 'string' || nome.trim() === '' || typeof preco !== 'number' || preco <= 0) {
+    return res.status(400).json({ erro: 'nome e preco válidos são obrigatórios' });
+  }
+  
+  next();
+};
 
 app.get('/products', (req, res) => {
   const products = readProducts();
-  
-  const activeProducts = products.filter(p => !p.deletedAt);
-  
+  const activeProducts = findAll(products);
   res.json(activeProducts);
 });
 
 app.get('/products/:id', (req, res) => {
   const id = Number(req.params.id);
   const products = readProducts();
-  
-  const product = products.find(p => p.id === id && !p.deletedAt);
+  const product = findById(products, id);
   
   if (!product) {
     return res.status(404).json({ erro: 'Produto não encontrado ou excluído' });
@@ -42,67 +48,48 @@ app.get('/products/:id', (req, res) => {
   res.json(product);
 });
 
+app.post('/products', validateUserPayload, (req, res) => {
+  const products = readProducts();
+  const result = create(products, req.body);
+  
+  writeProducts(result.updatedList);
+  res.status(201).json(result.createdEntity);
+});
 
 app.delete('/products/:id', (req, res) => {
   const id = Number(req.params.id);
   const forceDelete = req.query.force === 'true';
   const products = readProducts(); 
 
- 
-  const idx = products.findIndex(p => p.id === id && (forceDelete || !p.deletedAt));
+  const result = remove(products, id, forceDelete);
   
-  if (idx === -1) {
+  if (!result) {
     return res.status(404).json({ erro: 'Produto não encontrado' });
   }
   
-  if (forceDelete) {
-    
-    products.splice(idx, 1);
-  } else {
-    products[idx].deletedAt = new Date().toISOString();
-  }
-  
-  writeProducts(products);
+  writeProducts(result.updatedList);
   res.status(204).end();
 });
 
-
-
-
-app.put('/products/:id', (req, res) => {
+app.put('/products/:id', validateUserPayload, (req, res) => {
   const id = Number(req.params.id);
-  const { nome, preco } = req.body || {};
-  
-  if (typeof nome !== 'string' || nome.trim() === '' || typeof preco !== 'number' || preco <= 0) {
-    return res.status(400).json({ erro: 'nome e preco válidos são obrigatórios para PUT' });
-  }
-  
   const products = readProducts();
-  const idx = products.findIndex(p => p.id === id && !p.deletedAt); 
   
-  if (idx === -1) {
+  const result = update(products, id, req.body);
+  
+  if (!result) {
     return res.status(404).json({ erro: 'Produto não encontrado ou excluído' });
   }
 
-  const oldProduct = products[idx];
-  
-  products[idx] = { 
-    id, 
-    nome, 
-    preco,
-    createdAt: oldProduct.createdAt || new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-  
-  writeProducts(products);
-  res.json(products[idx]);
+  writeProducts(result.updatedList);
+  res.json(result.updatedEntity);
 });
 
 app.patch('/products/:id', (req, res) => {
   const id = Number(req.params.id);
   const products = readProducts();
   
-  const idx = products.findIndex(p => p.id === id && !p.deletedAt); 
+  const idx = products.findIndex(patchProducts => patchProducts.id === id && !patchProducts.deletedAt); 
   if (idx === -1) {
     return res.status(404).json({ erro: 'Produto não encontrado ou excluído' });
   }
