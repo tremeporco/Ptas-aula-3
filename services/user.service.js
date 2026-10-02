@@ -1,4 +1,4 @@
-export const usersProducts = {
+export const usersService = {
   async createUser(data) {
     const duplicado = (await usersModel.findAll())
       .some(u => u.email === data.email)
