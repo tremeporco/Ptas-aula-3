@@ -5,5 +5,10 @@
     "preco": 430,
     "updatedAt": "2026-09-03T02:03:27.010Z",
     "deletedAt": "2026-09-04T18:07:48.002Z"
+  },
+  {
+    "id": 2,
+    "nome": "Teclado",
+    "preco": 50
   }
 ]

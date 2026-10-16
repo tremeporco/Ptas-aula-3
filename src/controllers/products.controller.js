@@ -31,7 +31,6 @@ export async function getProduct(req, res, next) {
 export async function createProduct(req, res, next) {
   try {
     const novo = await productsService.createProduct(req.body)
-
     res.status(201).json(novo)
   } catch (err) {
     next(err)
